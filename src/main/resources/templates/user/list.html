@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="zh_CN" xmlns:th="http://www.thymeleaf.org"
+      xmlns:shiro="http://www.pollix.at/thymeleaf/shiro">
+<head>
+	<meta charset="UTF-8" />
+    <meta name="renderer" content="webkit" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+	<title>员工列表</title>
+	<link rel="icon" href="../static/image/code.png" data-th-href="@{/image/code.png}" />
+    <link rel="stylesheet" href="../static/frame/layui/css/layui.css" data-th-href="@{/frame/layui/css/layui.css}" />
+    <link rel="stylesheet" data-th-href="@{/css/style.css}" />
+	<script data-th-src="@{/frame/layui/layui.js}" charset="utf-8"></script>
+	<script data-th-src="@{/js/vue.min.js}" charset="utf-8"></script>
+</head>
+<body class="body">
+<div id="app">
+	<div class="layui-row">
+		<shiro:hasPermission name="user:add">
+		<span class="layui-btn-group">
+			<a class="layui-btn" v-on:click="addUI()"><i class="layui-icon">&#xe608;</i> 添加员工</a>
+			<a class="layui-btn" href="/file/empinfo-template.xlsx" download="员工信息模板.xlsx"><i class="layui-icon">&#xe61e;</i> 模板下载</a>
+			<button type="button" class="layui-btn" id="file1"><i class="layui-icon">&#xe67c;</i>导入Excel</button>
+		</span>
+		</shiro:hasPermission>
+		<shiro:hasPermission name="user:query">
+		<span style="float:right;">
+	        <label class="layui-form-label">员工：</label>
+	        <div class="layui-input-inline">
+	            <input type="text" name="name" id="searchName" autocomplete="off" class="layui-input" placeholder="请输入用户名">
+	        </div>
+	        <span class="layui-btn-group">
+		        <i class="layui-btn" v-on:click="search()"><i class="layui-icon">&#xe615;</i> 查询</i>
+		        <a class="layui-btn" v-on:click="exportExcel()"><i class="layui-icon">&#xe608;</i> 查询结果导出为CSV文件</a>
+	        </span>
+	    </span>
+	    </shiro:hasPermission>
+	</div>
+	<table class="layui-table" lay-data="{height:'full-106', url:'/user/listData', page:true, id:'userList'}" lay-filter="test">
+	  <thead>
+	    <tr>
+	      <th lay-data="{field:'id', width:60, sort:true}">ID</th>
+	      <th lay-data="{field:'name', width:80, sort:true}">姓名</th>
+	      <th lay-data="{field:'empNo', width:80, sort:true}">工号</th>
+	      <th lay-data="{field:'gender', width:80, sort: true}">性别</th>
+	      <th lay-data="{field:'jobLevel', width:80, sort:true}">职级</th>
+	      <th lay-data="{field:'status', width:110, sort:true}">在职状态</th>
+	      <shiro:hasRole name="Manager">
+	      <th lay-data="{field:'salary', width:80, sort:true}">薪资</th>
+	      </shiro:hasRole>
+	      <th lay-data="{field:'roleNames', width:80, sort:true}">角色</th>
+	      <th lay-data="{field:'city', width:100, sort:true}">办公城市</th>
+	      <th lay-data="{field:'beach', width:100, sort:true}">在岸/离岸</th>
+	      <th lay-data="{field:'special', width:130, sort:true}">是否特殊岗位</th>
+	      <th lay-data="{field:'phone', width:110, sort:true}">联系方式</th>
+	      <th lay-data="{field:'satrapName', width:130, sort:true}">中软直接主管</th>
+	      <th lay-data="{field:'liaisonOfficer', width:120, sort:true}">华为接口人</th>
+	      <th lay-data="{field:'connector', width:120, sort:true}">紧急联系人</th>
+	      <th lay-data="{field:'icPhone', width:180, sort:true}">紧急联系人联系方式</th>
+	      <th lay-data="{field:'address', width:120, sort:true}">工作地住址</th>
+	      <th lay-data="{field:'office', width:110, sort:true}">办公地点</th>
+	      <th lay-data="{field:'hireDate', width:160, sort:true}">入职日期</th>
+	      <th lay-data="{field:'hwmail', width:180, sort:true}">华为邮箱</th>
+	      <th lay-data="{field:'email', width:180, sort:true}">中软邮箱</th>
+	      <th lay-data="{field:'skill', width:80, sort:true}">技能</th>
+	      <th lay-data="{field:'remark', width:80, sort:true}">备注</th>
+	      <th lay-data="{fixed: 'right', width:150, align:'center', toolbar: '#barDemo'}">操作</th>
+	    </tr>
+	  </thead>
+	</table>
+	
+	<script type="text/html" id="barDemo">
+		<shiro:hasPermission name="user:update">
+		<a class="layui-btn layui-btn-mini" lay-event="edit">编辑</a>
+		</shiro:hasPermission>
+		<shiro:hasPermission name="user:delete">
+		<a class="layui-btn layui-btn-danger layui-btn-mini" lay-event="del">删除</a>
+		</shiro:hasPermission>
+	</script>
+	<!-- 添加员工表单 -->
+	<div id="layuser" style="display: none; padding: 10px 0;">
+		<form id="form1" class="layui-form" action="" method="post">
+			<input type="hidden" name="id" v-bind:value="user.id" />
+			<div class="layui-form-item">
+		        <div class="layui-inline">
+		            <label class="layui-form-label">姓名</label>
+		            <div class="layui-input-inline">
+		                <input type="text" name="name" v-model="user.name" autocomplete="off" class="layui-input">
+		            </div>
+		        </div>
+		        <div class="layui-inline">
+		            <label class="layui-form-label">中软工号</label>
+		            <div class="layui-input-inline">
+		                <input type="text" name="empNo" v-model="user.empNo" lay-verify="required" autocomplete="off" class="layui-input">
+		            </div>
+		        </div>
+		    </div>
+		    
+		    <div class="layui-form-item">
+		        <div class="layui-inline">
+		            <label class="layui-form-label">入职日期</label>
+		            <div class="layui-input-inline">
+		                <input type="text" name="hireDate" v-model="user.hireDate" lay-verify="required" placeholder="yyyy-mm-dd HH:mm:ss" readonly="readonly" autocomplete="off" class="layui-input" id="hireDate">
+		            </div>
+		        </div>
+		        <div class="layui-inline">
+		            <label class="layui-form-label">技能</label>
+		            <div class="layui-input-inline">
+		                <input type="text" name="skill" v-model="user.skill" lay-verify="required" placeholder="" autocomplete="off" class="layui-input">
+		            </div>
+		        </div>
+		    </div>
+		    
+		    <div class="layui-form-item">
+		        <div class="layui-inline">
+		            <label class="layui-form-label">华为邮箱</label>
+		            <div class="layui-input-inline">
+		            	<input type="text" name="hwmail" v-model="user.hwmail" lay-verify="email" autocomplete="off" class="layui-input">
+		            </div>
+		        </div>
+		        <div class="layui-inline">
+		            <label class="layui-form-label">中软邮箱</label>
+		            <div class="layui-input-inline">
+		            	<input type="text" name="email" v-model="user.email" lay-verify="email" autocomplete="off" class="layui-input">
+		            </div>
+		        </div>
+		    </div>
+		    
+		    <div class="layui-form-item">
+		        <div class="layui-inline">
+		            <label class="layui-form-label">职级</label>
+		            <div class="layui-input-inline">
+		                <input type="text" name="jobLevel" v-model="user.jobLevel" autocomplete="off" class="layui-input">
+		            </div>
+		        </div>
+		        <shiro:hasRole name="Manager">
+		        <div class="layui-inline">
+		            <label class="layui-form-label">薪资</label>
+		            <div class="layui-input-inline">
+		                <input type="text" name="salary" v-model="user.salary" autocomplete="off" class="layui-input">
+		            </div>
+		        </div>
+		        </shiro:hasRole>
+		    </div>
+		    
+		    <div class="layui-form-item">
+		    	<div class="layui-inline">
+		        	<label class="layui-form-label">状态</label>
+		        	<div class="layui-input-inline">
+			            <select name="status" v-model="user.status" lay-verify="required" lay-filter="status">
+			                <option value="">请选择</option>
+			                <option value="在职" selected>在职</option>
+			                <option value="离职">离职</option>
+			            </select>
+		            </div>
+		        </div>
+		    	<div class="layui-inline">
+		        	<label class="layui-form-label">性别</label>
+		        	<div class="layui-input-inline">
+			            <select name="gender" v-model="user.gender" lay-verify="required" lay-filter="gender">
+			                <option value="">请选择</option>
+			                <option value="男" selected>男</option>
+			                <option value="女">女</option>
+			            </select>
+		            </div>
+		        </div>
+		   	</div>
+		   	
+		   	<div class="layui-form-item">
+		   		<div class="layui-inline">
+		            <label class="layui-form-label">办公城市</label>
+		            <div class="layui-input-inline">
+		                <input type="text" name="city" v-model="user.city" lay-verify="required" autocomplete="off" class="layui-input">
+		            </div>
+		        </div>
+		        <div class="layui-inline">
+			        <label class="layui-form-label">在岸/离岸</label>
+			        <div class="layui-input-inline">
+			            <select name="beach" v-model="user.beach" lay-filter="beach">
+			                <option value="">请选择</option>
+			                <option value="在岸" selected>在岸</option>
+			                <option value="离岸">离岸</option>
+			            </select>
+			        </div>
+		      	</div>
+		    </div>
+		    
+		    <div class="layui-form-item">
+		    	<div class="layui-inline">
+			        <lable class="layui-form-label">特殊岗位</lable>
+			        <div class="layui-input-inline">
+			            <select name="special" v-model="user.special" lay-filter="special">
+			                <option value="">请选择</option>
+			                <option value="是">是</option>
+			                <option value="否" selected>否</option>
+			            </select>
+			        </div>
+		        </div>
+		        <div class="layui-inline">
+		            <label class="layui-form-label">联系方式</label>
+		            <div class="layui-input-inline">
+		                <input type="text" name="phone" v-model="user.phone" lay-verify="required" autocomplete="off" class="layui-input">
+		            </div>
+		        </div>
+		        
+		    </div>
+		    
+		    <div class="layui-form-item">
+		    	<div class="layui-inline">
+		            <label class="layui-form-label">直接主管</label>
+		            <div class="layui-input-inline">
+			            <select name="satrapId" lay-filter="satrapId" v-model="user.satrapId">
+		            		<option value="">请选择</option>
+			                <option v-for="user of allUsers" v-bind:value="user.id">{{user.name}} / {{user.empNo}}</option>
+		            	</select>
+	            	</div>
+		        </div>
+		    	<div class="layui-inline">
+	            <label class="layui-form-label">华为接口人</label>
+	            <div class="layui-input-inline">
+	                <input type="text" name="liaisonOfficer" v-model="user.liaisonOfficer" lay-verify="required" placeholder="华为接口人姓名/工号" autocomplete="off" class="layui-input">
+	            </div>
+	        </div>
+		    </div>
+		    
+		    <div class="layui-form-item">
+	        <label class="layui-form-label">角色</label>
+	        <div class="layui-input-block" style="width:553px;">
+	        	<input type="checkbox" v-for="role of roles" v-bind:value="role.id" name="role[{{role.id}}]" title="{{role.name}}">
+	        </div>
+	    </div>
+		    
+		    <div class="layui-form-item">
+		        <div class="layui-inline">
+		            <label class="layui-form-label">紧急联系人</label>
+		            <div class="layui-input-inline">
+		                <input type="text" name="connector" v-model="user.connector" lay-verify="required" autocomplete="off" class="layui-input">
+		            </div>
+		        </div>
+		        <div class="layui-inline">
+		            <label class="layui-form-label">紧急联系人联系方式</label>
+		            <div class="layui-input-inline">
+		                <input type="text" name="icPhone" v-model="user.icPhone" lay-verify="required" autocomplete="off" class="layui-input">
+		            </div>
+		        </div>
+		    </div>
+		    
+		    <div class="layui-form-item">
+		        <div class="layui-inline">
+		            <label class="layui-form-label">工作地住址</label>
+		            <div class="layui-input-inline">
+		                <input type="text" name="address" v-model="user.address" lay-verify="required" autocomplete="off" class="layui-input">
+		            </div>
+		        </div>
+		        <div class="layui-inline">
+		            <label class="layui-form-label">办公地点</label>
+		            <div class="layui-input-inline">
+		                <input type="text" name="office" v-model="user.office" lay-verify="required" autocomplete="off" class="layui-input">
+		            </div>
+		        </div>
+		    </div>
+		    
+		    <div class="layui-form-item">
+		        <div class="layui-inline">
+		            <label class="layui-form-label">备注</label>
+		            <div class="layui-input-inline">
+		                <input type="text" name="remark" v-model="user.remark" autocomplete="off" class="layui-input">
+		            </div>
+		        </div>
+		    </div>
+		    
+		    <div class="layui-form-item">
+		        <div class="layui-input-block">
+		            <button class="layui-btn" lay-submit="" lay-filter="sb1">立即提交</button>
+		            <a href="javascript:void(0);" class="layui-btn layui-btn-primary" @click="resetForm()">重置</a>
+		        </div>
+		    </div>
+		</form>
+	</div>
+</div>
+</body>
+	<script data-th-src="@{/js/FileSaver.min.js}" charset="utf-8"></script>
+	<script data-th-src="@{/js/userList.js}" charset="utf-8"></script>
+</html>

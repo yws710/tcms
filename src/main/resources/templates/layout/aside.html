@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<div class="layui-side layui-bg-black" th:fragment="aside">
+    <div class="layui-side-scroll">
+        <!-- 左侧导航区域（可配合layui已有的垂直导航） -->
+        <ul class="layui-nav layui-nav-tree"  lay-filter="test">
+            
+            	<shiro:hasRole name="Admin">
+		        <li class="layui-nav-item layui-nav-itemed">
+                	<a href="javascript:;">系统管理</a>
+                	<dl class="layui-nav-child">
+                        <dd><a href="javascript:;" href-url="role/list" data-type="tabAdd">角色管理</a></dd>
+                        <dd><a href="javascript:;" href-url="privilege/list" data-type="tabAdd">权限管理</a></dd>
+						<dd><a href="javascript:;" href-url="druid/sql.html" data-type="tabAdd">数据监控</a></dd>
+                    </dl>
+                </li>
+                </shiro:hasRole>
+                
+                <%-- 已身份验证通过
+                <shiro:authenticated>
+                <li class="layui-nav-item layui-nav-itemed">
+                	<a href="javascript:;" href-url="user/personalInfoUI" data-type="tabAdd">个人信息</a>
+                </li>
+                </shiro:authenticated>
+                 --%>
+                
+                <shiro:hasPermission name="user:query">
+                <li class="layui-nav-item layui-nav-itemed">
+                	<a href="javascript:;" href-url="user/list" data-type="tabAdd">员工管理</a>
+                </li>
+                </shiro:hasPermission>
+                
+                <shiro:hasPermission name="project:query">
+                <li class="layui-nav-item layui-nav-itemed">
+                	<a href="javascript:;" href-url="project/list" data-type="tabAdd">项目管理</a>
+                </li>
+                </shiro:hasPermission>
+                
+                <shiro:hasPermission name="manhour:query">
+                <li class="layui-nav-item layui-nav-itemed">
+                	<a href="javascript:;">超长加班</a>
+                	<dl class="layui-nav-child">
+                		<shiro:hasPermission name="manhour:add">
+                		<dd><a href="javascript:;" href-url="manhour/list" data-type="tabAdd">数据</a></dd>
+                		</shiro:hasPermission>
+                		<dd><a href="javascript:;" href-url="manhour/department" data-type="tabAdd">部门</a></dd>
+                        <dd><a href="javascript:;" href-url="manhour/project" data-type="tabAdd">项目组</a></dd>
+                        <dd><a href="javascript:;" href-url="manhour/person" data-type="tabAdd">个人</a></dd>
+                    </dl>
+                </li>
+                </shiro:hasPermission>
+            </ul>
+    </div>
+</div>
+</body>
+</html>

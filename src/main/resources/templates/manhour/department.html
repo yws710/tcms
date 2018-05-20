@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="zh_CN" xmlns:th="http://www.thymeleaf.org"
+      xmlns:shiro="http://www.pollix.at/thymeleaf/shiro">
+<head>
+	<meta charset="UTF-8" />
+    <meta name="renderer" content="webkit" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
+	<title>部门餐补和超出工时统计</title>
+	<link rel="icon" href="../static/image/code.png" data-th-href="@{/image/code.png}" />
+    <link rel="stylesheet" href="../static/frame/layui/css/layui.css" data-th-href="@{/frame/layui/css/layui.css}" />
+    <link rel="stylesheet" data-th-href="@{/css/style.css}" />
+	<script data-th-src="@{/frame/layui/layui.js}" charset="utf-8"></script>
+	<script data-th-src="@{/js/vue.min.js}" charset="utf-8"></script>
+	<style>
+    	#pdu-month,#pdu-quarter,#pdu-year{
+    		border: 1px solid #D2D6DE;
+    		border-radius: 6px;
+    	}
+    </style>
+</head>
+
+<body style="padding: 20px 0 60px 0;">
+	<div class="layui-fluid">
+		<form class="layui-form" action="" style="margin-bottom: 20px;">
+			<label class="layui-form-label">部门名称：</label>
+	        <div class="layui-input-inline">
+				<select name="pdu" id="pdu" lay-verify="required" lay-filter="pdu">
+					<option th:each="pdu : ${pduList}" th:value="${pdu}" th:text="${pdu}"></option>
+	            </select>
+	        </div>
+	        <span class="layui-btn-group">
+		        <button class="layui-btn" lay-submit="" lay-filter="sb1"><i class="layui-icon">&#xe615;</i> 查询</button>
+	        </span>
+		</form>
+		
+		<div class="layui-row layui-col-space10">
+		    <div class="layui-col-md6">
+				<div id="pdu-month" style="width: 100%; height:450px;"></div>
+		    </div>
+		    <div class="layui-col-md6">
+		    	<div id="pdu-quarter" style="width: 100%; height:450px;"></div>
+		    </div>
+		</div>
+		<div class="layui-row layui-col-space10">
+		    <div class="layui-col-md6">
+		    	<!-- 为 ECharts 准备一个具备大小（宽高）的 DOM -->
+				<div id="pdu-year" style="width: 100%; height:450px;"></div>
+		    </div>
+		    <div class="layui-col-md6"></div>
+		</div>
+	</div>
+
+
+<script type="text/javascript" data-th-src="@{/frame/echarts/echarts.min.js}"></script>
+<script type="text/javascript">
+/*<![CDATA[*/
+layui.use(['form','jquery'],function(){
+	var form = layui.form
+		,$ = layui.jquery;
+
+    // 基于准备好的dom，初始化echarts实例
+    var monthChart = echarts.init(document.getElementById('pdu-month'));
+    var monthOption = {
+    	backgroundColor: '#ECF0F5',//背景色
+		title: {
+			text: ''
+			//,subtext: ''
+			,x: 'center'
+		},
+		tooltip: {
+			trigger: 'axis',
+			axisPointer : {            // 坐标轴指示器，坐标轴触发有效
+				type : 'shadow'        // 默认为直线，可选为：'line' | 'shadow'
+			}
+		},
+		legend: {
+			data:['餐补','超出工时']
+			,top: 30
+		},
+		grid: {
+			left: '3%',
+			right: '4%',
+			bottom: 40,
+			containLabel: true
+		},
+		toolbox: {
+			show: true,
+			feature: {
+				dataZoom: {
+					yAxisIndex: 'none'
+				},
+				dataView: {readOnly: false},
+				magicType: {type: ['line', 'bar']},
+				restore: {},
+				saveAsImage: {}
+			}
+		},
+		dataZoom: [
+			{
+				show: true,
+				realtime: true,
+				start: 0,
+				end: 100
+			},
+			{
+				type: 'inside',
+				realtime: true,
+				start: 0,
+				end: 100
+			}
+		],
+		xAxis:  {
+			type: 'category',
+			boundaryGap: true, // 贴边有间距（避免最左边的柱子跑到Y轴外边去了）
+			data: []
+		},
+		yAxis: {
+			type: 'value',
+			axisLabel: {
+				formatter: '{value} h'
+			}
+		},
+		series: [
+			{
+				name:'餐补',
+				type:'bar',
+				barGap: 0,
+				data:[]
+			},
+			{
+				name:'超出工时',
+				type:'bar',
+				data:[]
+			}
+		]
+	};
+	
+	
+    // 基于准备好的dom，初始化echarts实例
+    var quarterChart = echarts.init(document.getElementById('pdu-quarter'));
+    var quarterOption = {
+    	backgroundColor: '#ECF0F5',//背景色
+		title: {
+			text: ''
+			//,subtext: ''
+			,x: 'center'
+		},
+		tooltip: {
+			trigger: 'axis',
+			axisPointer : {            // 坐标轴指示器，坐标轴触发有效
+				type : 'shadow'        // 默认为直线，可选为：'line' | 'shadow'
+			}
+		},
+		legend: {
+			data:['餐补','超出工时']
+			,top: 30
+		},
+		grid: {
+			left: '3%',
+			right: '4%',
+			bottom: 40,
+			containLabel: true
+		},
+		toolbox: {
+			show: true,
+			feature: {
+				dataZoom: {
+					yAxisIndex: 'none'
+				},
+				dataView: {readOnly: false},
+				magicType: {type: ['line', 'bar']},
+				restore: {},
+				saveAsImage: {}
+			}
+		},
+		dataZoom: [
+			{
+				show: true,
+				realtime: true,
+				start: 0,
+				end: 100
+			},
+			{
+				type: 'inside',
+				realtime: true,
+				start: 0,
+				end: 100
+			}
+		],
+		xAxis:  {
+			type: 'category',
+			boundaryGap: true,
+			data: []
+		},
+		yAxis: {
+			type: 'value',
+			axisLabel: {
+				formatter: '{value} h'
+			}
+		},
+		series: [
+			{
+				name:'餐补',
+				type:'bar',
+				barGap: 0,
+				data:[]
+			},
+			{
+				name:'超出工时',
+				type:'bar',
+				data:[]
+			}
+		]
+	};
+
+	
+    // 基于准备好的dom，初始化echarts实例
+    var yearChart = echarts.init(document.getElementById('pdu-year'));
+    var yearOption = {
+    	backgroundColor: '#ECF0F5',//背景色
+		title: {
+			text: ''
+			//,subtext: ''
+			,x: 'center'
+		},
+		tooltip: {
+			trigger: 'axis',
+			axisPointer : {            // 坐标轴指示器，坐标轴触发有效
+            type : 'shadow'        // 默认为直线，可选为：'line' | 'shadow'
+        }
+		},
+		legend: {
+			data:['餐补','超出工时']
+			,top: 30
+		},
+		grid: {
+			left: '3%',
+			right: '4%',
+			bottom: 40,
+			containLabel: true
+		},
+		toolbox: {
+			show: true,
+			feature: {
+				dataZoom: {
+					yAxisIndex: 'none'
+				},
+				dataView: {readOnly: false},
+				magicType: {type: ['line', 'bar']},
+				restore: {},
+				saveAsImage: {}
+			}
+		},
+		dataZoom: [
+			{
+				show: true,
+				realtime: true,
+				start: 0,
+				end: 100
+			},
+			{
+				type: 'inside',
+				realtime: true,
+				start: 0,
+				end: 100
+			}
+		],
+		xAxis:  {
+			type: 'category',
+			boundaryGap: true,
+			data: []
+		},
+		yAxis: {
+			type: 'value',
+			axisLabel: {
+				formatter: '{value} h'
+			}
+		},
+		series: [
+			{
+				name:'餐补',
+				type:'bar',
+				barGap: 0,
+				data:[]
+			},
+			{
+				name:'超出工时',
+				type:'bar',
+				data:[]
+			}
+		]
+	};
+
+	//监听提交表单
+    form.on('submit(sb1)', function(data){
+    	$.ajax({
+    		type: 'POST',
+    		url: '/manhour/byPdu',
+    		data: {pdu:$('#pdu option:selected').text()},
+    		dataType: 'json',
+    		beforeSend: function(){
+    			monthChart.showLoading({
+    				text: '数据加载中...'
+    			});
+    			quarterChart.showLoading({
+    				text: '数据加载中...'
+    			});
+    			yearChart.showLoading({
+    				text: '数据加载中...'
+    			});
+    		},
+    		success: function(result){
+    			monthOption.title.text = result.name + '月度表';
+    			monthOption.xAxis.data = result.mxAxis;
+    			monthOption.series[0].data = result.mseries1;
+    			monthOption.series[1].data = result.mseries2
+    			monthChart.setOption(monthOption, true);
+    			monthChart.hideLoading();
+    			
+    			quarterOption.title.text = result.name + '季度表';
+    			quarterOption.xAxis.data = result.qxAxis;
+    			quarterOption.series[0].data = result.qseries1;
+    			quarterOption.series[1].data = result.qseries2
+    			quarterChart.setOption(quarterOption, true);
+    			quarterChart.hideLoading();
+    			
+    			yearOption.title.text = result.name + '年度表';
+    			yearOption.xAxis.data = result.yxAxis;
+    			yearOption.series[0].data = result.yseries1;
+    			yearOption.series[1].data = result.yseries2
+    			yearChart.setOption(yearOption, true);
+    			yearChart.hideLoading();
+    		},
+    		error: function(msg){
+    			layer.msg('获取数据失败，与服务器连接已断开。');
+    			
+    		},
+    		complete: function(xmlHttpRequest, strStatus){
+    		}
+    	});
+    	
+        return false;
+    });
+	
+	// 图表大小随窗口变化（图表宽高设为百分比时才有效）
+    window.addEventListener("resize", function(){
+        monthChart.resize();
+        quarterChart.resize();
+        yearChart.resize();
+    });
+
+})
+/*]]>*/
+</script>
+</body>
+</html>
